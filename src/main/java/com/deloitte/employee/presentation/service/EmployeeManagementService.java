@@ -1,12 +1,14 @@
 package com.deloitte.employee.presentation.service;
 
+import com.deloitte.employee.domain.enums.EmployeeSortField;
 import com.deloitte.employee.domain.mapper.ExceptionMapper;
-import com.deloitte.employee.domain.repository.IEmployeeRepository;
+import com.deloitte.employee.domain.repository.IEmployeeManagementDao;
+import com.deloitte.employee.domain.valueobject.Query;
 import com.deloitte.employee.presentation.dto.request.EmployeeDetailInput;
 import com.deloitte.employee.presentation.dto.response.EmployeeDetail;
 import com.deloitte.employee.presentation.exception.AppException;
 import com.deloitte.employee.presentation.exception.ErrorCode;
-import com.deloitte.employee.presentation.exception.ErrorDetail;
+import com.deloitte.employee.domain.entities.ErrorDetail;
 import com.deloitte.employee.presentation.exception.ErrorResponse;
 import com.deloitte.employee.presentation.mapper.EmployeeDataMapper;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class EmployeeManagementService {
 
-    private final IEmployeeRepository employeeRepository;
+    private final IEmployeeManagementDao employeeRepository;
     private final EmployeeDataMapper employeeDataMapper;
     private final ExceptionMapper<AppException> exceptionMapper;
 
@@ -30,26 +32,29 @@ public class EmployeeManagementService {
                     throw exceptionMapper.map(f);
                 },
                 opt -> opt.map(employeeDataMapper::toDetail)
-                        .getOrElseThrow(() -> AppException.builder()
-                                .errorDetail(ErrorResponse.builder()
-                                        .code(HttpStatus.NOT_FOUND.value())
-                                        .errorCode(ErrorCode.RESOURCE_NOT_FOUND)
-                                        .message("User not found")
-                                        .errorDetails(List.of(
-                                                ErrorDetail.builder()
-                                                        .code("ERR_USER_NOT_FOUND")
-                                                        .field("id")
-                                                        .message("No user exists with the provided ID or email.")
-                                                        .build()
-                                        ))
-                                        .build())
-                                .cause(null)
-                                .build())
+                        .getOrElseThrow(() -> AppException.of(
+                                        ErrorResponse.builder()
+                                                .code(HttpStatus.NOT_FOUND.value())
+                                                .errorCode(ErrorCode.RESOURCE_NOT_FOUND)
+                                                .message("User not found")
+                                                .errorDetails(List.of(
+                                                        ErrorDetail.builder()
+                                                                .code("ERR_USER_NOT_FOUND")
+                                                                .field("id")
+                                                                .message("No user exists with the provided ID or email.")
+                                                                .build()
+                                                ))
+                                                .build()
+                                )
+                        )
         );
     }
 
     public List<EmployeeDetail> getAllEmployee() {
-        return employeeRepository.getEmployees()
+        return employeeRepository.getEmployees(Query.<EmployeeSortField>defaultQuery().fold(
+                        exceptionMapper::mapAndThrow,
+                        q -> q
+                ))
                 .fold(
                         exceptionMapper::mapAndThrow,
                         list -> list.stream()
@@ -67,8 +72,8 @@ public class EmployeeManagementService {
                 );
     }
 
-    public EmployeeDetail updateEmployee(EmployeeDetailInput employee) {
-        return employeeRepository.updateEmployee(employeeDataMapper.toEntity(employee))
+    public EmployeeDetail updateEmployee(String id, EmployeeDetailInput employee) {
+        return employeeRepository.updateEmployee(id, employeeDataMapper.toEntity(employee))
                 .fold(
                         exceptionMapper::mapAndThrow,
                         employeeDataMapper::toDetail

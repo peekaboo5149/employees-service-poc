@@ -1,14 +1,15 @@
 package com.deloitte.employee.presentation.service;
 
 import com.deloitte.employee.domain.entities.Employee;
+import com.deloitte.employee.domain.entities.ErrorDetail;
 import com.deloitte.employee.domain.failure.OperationFailure;
+import com.deloitte.employee.domain.failure.SystemFailure;
 import com.deloitte.employee.domain.mapper.ExceptionMapper;
-import com.deloitte.employee.domain.repository.IEmployeeRepository;
+import com.deloitte.employee.domain.repository.IEmployeeManagementDao;
 import com.deloitte.employee.presentation.dto.request.EmployeeDetailInput;
 import com.deloitte.employee.presentation.dto.response.EmployeeDetail;
 import com.deloitte.employee.presentation.exception.AppException;
 import com.deloitte.employee.presentation.exception.ErrorCode;
-import com.deloitte.employee.presentation.exception.ErrorDetail;
 import com.deloitte.employee.presentation.exception.ErrorResponse;
 import com.deloitte.employee.presentation.mapper.EmployeeDataMapper;
 import io.vavr.control.Either;
@@ -20,19 +21,20 @@ import java.util.List;
 
 import static com.deloitte.employee.helper.TestUtils.mockExceptionMapper;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 class EmployeeManagementServiceTest {
 
-    private IEmployeeRepository employeeRepository;
+    private IEmployeeManagementDao employeeRepository;
     private EmployeeDataMapper employeeDataMapper;
     private ExceptionMapper<AppException> exceptionMapper;
     private EmployeeManagementService sut;
 
     @BeforeEach
     void setup() {
-        employeeRepository = mock(IEmployeeRepository.class);
+        employeeRepository = mock(IEmployeeManagementDao.class);
         employeeDataMapper = mock(EmployeeDataMapper.class);
         exceptionMapper = mockExceptionMapper();
         sut = new EmployeeManagementService(
@@ -88,11 +90,19 @@ class EmployeeManagementServiceTest {
     @Test
     void getEmployeeById_shouldThrowMappedException_whenRepositoryFails() {
 
-        OperationFailure failure = mock(OperationFailure.class);
+        OperationFailure failure = new SystemFailure(
+                List.of(
+                        ErrorDetail.builder()
+                                .code("ERR_DB")
+                                .message("DB error")
+                                .build()
+                ),
+                new RuntimeException("DB crashed"),
+                "Database failure"
+        );
 
-
-        AppException mapped = AppException.builder()
-                .errorDetail(ErrorResponse.builder()
+        AppException mapped = AppException.of(
+                ErrorResponse.builder()
                         .code(500)
                         .errorCode(ErrorCode.INTERNAL_SERVER_ERROR)
                         .message("Database failure")
@@ -102,8 +112,9 @@ class EmployeeManagementServiceTest {
                                         .message("DB error")
                                         .build()
                         ))
-                        .build())
-                .build();
+                        .build()
+        );
+
 
         when(employeeRepository.getEmployeeById("123"))
                 .thenReturn(Either.left(failure));
@@ -131,14 +142,14 @@ class EmployeeManagementServiceTest {
                 EmployeeDetail.builder().id("1").fullName("A").email("a@gmail.com").build(),
                 EmployeeDetail.builder().id("2").fullName("B").email("b@gmail.com").build()
         );
-
-        when(employeeRepository.getEmployees())
+        when(employeeRepository.getEmployees(any()))
                 .thenReturn(Either.right(employees));
 
         when(employeeDataMapper.toDetail(employees.get(0))).thenReturn(mapped.get(0));
         when(employeeDataMapper.toDetail(employees.get(1))).thenReturn(mapped.get(1));
 
         List<EmployeeDetail> result = sut.getAllEmployee();
+
 
         assertEquals(2, result.size());
         assertEquals("A", result.get(0).getFullName());
@@ -150,17 +161,27 @@ class EmployeeManagementServiceTest {
     @Test
     void getAllEmployee_shouldThrowMappedException_whenRepositoryFails() {
 
-        OperationFailure failure = mock(OperationFailure.class);
+        OperationFailure failure = new SystemFailure(
+                List.of(
+                        ErrorDetail.builder()
+                                .code("ERR_DB")
+                                .message("DB error")
+                                .build()
+                ),
+                new RuntimeException("DB crashed"),
+                "Database failure"
+        );
 
-        AppException mapped = AppException.builder()
-                .errorDetail(ErrorResponse.builder()
+        AppException mapped = AppException.of(
+                ErrorResponse.builder()
                         .message("DB failed")
                         .code(500)
                         .errorCode(ErrorCode.INTERNAL_SERVER_ERROR)
-                        .build())
-                .build();
+                        .build()
+        );
 
-        when(employeeRepository.getEmployees())
+
+        when(employeeRepository.getEmployees(any()))
                 .thenReturn(Either.left(failure));
 
         when(exceptionMapper.mapAndThrow(failure))
@@ -179,7 +200,7 @@ class EmployeeManagementServiceTest {
     @Test
     void getAllEmployee_shouldReturnEmptyList_whenNoEmployees() {
 
-        when(employeeRepository.getEmployees())
+        when(employeeRepository.getEmployees(any()))
                 .thenReturn(Either.right(List.of()));
 
         List<EmployeeDetail> result = sut.getAllEmployee();
@@ -260,14 +281,24 @@ class EmployeeManagementServiceTest {
         Employee entity = Employee.builder().build();
         when(employeeDataMapper.toEntity(input)).thenReturn(entity);
 
-        OperationFailure failure = mock(OperationFailure.class);
-        AppException mapped = AppException.builder()
-                .errorDetail(ErrorResponse.builder()
+        OperationFailure failure = new SystemFailure(
+                List.of(
+                        ErrorDetail.builder()
+                                .code("ERR_DB")
+                                .message("DB error")
+                                .build()
+                ),
+                new RuntimeException("DB crashed"),
+                "Database failure"
+        );
+        AppException mapped = AppException.of(
+                ErrorResponse.builder()
                         .message("DB error")
                         .code(500)
                         .errorCode(ErrorCode.INTERNAL_SERVER_ERROR)
-                        .build())
-                .build();
+                        .build()
+        );
+
 
         when(employeeRepository.createEmployee(entity)).thenReturn(Either.left(failure));
         when(exceptionMapper.mapAndThrow(failure)).thenThrow(mapped);
@@ -289,7 +320,6 @@ class EmployeeManagementServiceTest {
     void updateEmployee_shouldReturnEmployeeDetail_whenSuccessful() {
         // Input DTO
         EmployeeDetailInput input = EmployeeDetailInput.builder()
-                .id("123")
                 .fullName("Jane Doe")
                 .email("jane@gmail.com")
                 .build();
@@ -312,13 +342,13 @@ class EmployeeManagementServiceTest {
         when(employeeDataMapper.toEntity(input)).thenReturn(entity);
 
         // Mock repository update
-        when(employeeRepository.updateEmployee(entity)).thenReturn(Either.right(entity));
+        when(employeeRepository.updateEmployee("123", entity)).thenReturn(Either.right(entity));
 
         // Mock mapper from Employee -> EmployeeDetail
         when(employeeDataMapper.toDetail(entity)).thenReturn(detail);
 
         // Call service
-        EmployeeDetail result = sut.updateEmployee(input);
+        EmployeeDetail result = sut.updateEmployee("123", input);
 
         // Assertions
         assertEquals("123", result.getId());
@@ -327,14 +357,13 @@ class EmployeeManagementServiceTest {
 
         // Verify mocks
         verify(employeeDataMapper).toEntity(input);
-        verify(employeeRepository).updateEmployee(entity);
+        verify(employeeRepository).updateEmployee("123", entity);
         verify(employeeDataMapper).toDetail(entity);
     }
 
     @Test
     void updateEmployee_shouldThrowMappedException_whenRepositoryFails() {
         EmployeeDetailInput input = EmployeeDetailInput.builder()
-                .id("123")
                 .fullName("Jane Doe")
                 .email("jane@gmail.com")
                 .build();
@@ -342,20 +371,30 @@ class EmployeeManagementServiceTest {
         Employee entity = Employee.builder().build();
         when(employeeDataMapper.toEntity(input)).thenReturn(entity);
 
-        OperationFailure failure = mock(OperationFailure.class);
-        AppException mapped = AppException.builder()
-                .errorDetail(ErrorResponse.builder()
+        OperationFailure failure = new SystemFailure(
+                List.of(
+                        ErrorDetail.builder()
+                                .code("ERR_DB")
+                                .message("DB error")
+                                .build()
+                ),
+                new RuntimeException("DB crashed"),
+                "Database failure"
+        );
+        AppException mapped = AppException.of(
+                ErrorResponse.builder()
                         .message("Update failed")
                         .code(500)
                         .errorCode(ErrorCode.INTERNAL_SERVER_ERROR)
-                        .build())
-                .build();
+                        .build()
+        );
 
-        when(employeeRepository.updateEmployee(entity)).thenReturn(Either.left(failure));
+
+        when(employeeRepository.updateEmployee("123", entity)).thenReturn(Either.left(failure));
         when(exceptionMapper.mapAndThrow(failure)).thenThrow(mapped);
 
         // Call service and assert exception
-        assertThatThrownBy(() -> sut.updateEmployee(input))
+        assertThatThrownBy(() -> sut.updateEmployee("123", input))
                 .isInstanceOf(AppException.class)
                 .satisfies(ex -> {
                     AppException app = (AppException) ex;
@@ -363,7 +402,7 @@ class EmployeeManagementServiceTest {
                 });
 
         verify(employeeDataMapper).toEntity(input);
-        verify(employeeRepository).updateEmployee(entity);
+        verify(employeeRepository).updateEmployee("123", entity);
         verify(exceptionMapper).mapAndThrow(failure);
     }
 
@@ -371,15 +410,24 @@ class EmployeeManagementServiceTest {
     @Test
     void deleteEmployee_shouldThrowMappedException_whenFailureReturned() {
 
-        OperationFailure failure = mock(OperationFailure.class);
-
-        AppException mapped = AppException.builder()
-                .errorDetail(ErrorResponse.builder()
+        OperationFailure failure = new SystemFailure(
+                List.of(
+                        ErrorDetail.builder()
+                                .code("ERR_DB")
+                                .message("DB error")
+                                .build()
+                ),
+                new RuntimeException("DB crashed"),
+                "Database failure"
+        );
+        AppException mapped = AppException.of(
+                ErrorResponse.builder()
                         .message("Delete failed")
                         .code(500)
                         .errorCode(ErrorCode.INTERNAL_SERVER_ERROR)
-                        .build())
-                .build();
+                        .build()
+        );
+
 
         // Repository returns failure
         when(employeeRepository.deleteEmployee("123"))

@@ -1,5 +1,6 @@
 package com.deloitte.employee.presentation.exception;
 
+import com.deloitte.employee.domain.entities.ErrorDetail;
 import lombok.Builder;
 import lombok.Data;
 

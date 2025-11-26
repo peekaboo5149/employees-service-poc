@@ -1,10 +1,10 @@
-package com.deloitte.employee.presentation.exception;
+package com.deloitte.employee.domain.entities;
 
 import lombok.Builder;
 import lombok.Data;
 
 /**
- * Represents a single error detail for a specific field or context.
+ * Represents a single error detail for a specific field or context (domain specific).
  */
 @Data
 @Builder

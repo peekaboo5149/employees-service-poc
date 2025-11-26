@@ -10,7 +10,6 @@ public class EmployeeDetail {
 
     private String id;
     private String email;
-    private String password;
     private String fullName;
     private String phoneNumber;
     private String dob;

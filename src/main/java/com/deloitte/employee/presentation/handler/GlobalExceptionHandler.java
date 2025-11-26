@@ -3,7 +3,7 @@ package com.deloitte.employee.presentation.handler;
 
 import com.deloitte.employee.presentation.exception.AppException;
 import com.deloitte.employee.presentation.exception.ErrorCode;
-import com.deloitte.employee.presentation.exception.ErrorDetail;
+import com.deloitte.employee.domain.entities.ErrorDetail;
 import com.deloitte.employee.presentation.exception.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

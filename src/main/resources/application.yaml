@@ -2,6 +2,33 @@ spring:
   application:
     name: employee-service
 
+  datasource:
+    url: ${DB_HOST_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driverClassName: org.postgresql.Driver
+    connectionTimeout: 60000
+    maxLifeTime: 90000
+    maximumPoolSize: 20
+    idleTimeout: 90000
+    minimumIdle: 10
+    leakDetectionThreshold: 30000
+    connectionTestQuery: SELECT 1
+    readOnly: false
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
 server:
   servlet:
     context-path: /api/v1
+
+logging:
+  level:
+    root: INFO
