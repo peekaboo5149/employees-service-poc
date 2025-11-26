@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: employee-service
+
+server:
+  servlet:
+    context-path: /api/v1
