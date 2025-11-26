@@ -1,6 +1,7 @@
 package com.deloitte.employee.domain.valueobject;
 
 import com.deloitte.employee.domain.entities.ErrorDetail;
+import com.deloitte.employee.domain.enums.SortDirection;
 import com.deloitte.employee.domain.failure.OperationFailure;
 import com.deloitte.employee.domain.failure.ValidationFailure;
 import io.vavr.control.Either;

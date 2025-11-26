@@ -9,7 +9,7 @@ import com.deloitte.employee.domain.support.EntitySearchValidationSupport;
 import com.deloitte.employee.domain.support.EntitySortSupport;
 import com.deloitte.employee.domain.valueobject.Query;
 import com.deloitte.employee.domain.valueobject.Search;
-import com.deloitte.employee.domain.valueobject.SortDirection;
+import com.deloitte.employee.domain.enums.SortDirection;
 import com.deloitte.employee.infra.entities.EmployeeJPAEntity;
 import com.deloitte.employee.infra.mapper.EmployeeJPAMapper;
 import com.deloitte.employee.infra.repositories.EmployeeJPARepository;
