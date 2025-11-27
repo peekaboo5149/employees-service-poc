@@ -67,3 +67,7 @@ mandatory:
       - "/api/actuator"
     startsWith:
       - "/api/actuator/"
+
+application:
+  employee-management:
+    seed: true
