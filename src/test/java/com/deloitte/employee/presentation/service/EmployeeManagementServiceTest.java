@@ -2,16 +2,20 @@ package com.deloitte.employee.presentation.service;
 
 import com.deloitte.employee.domain.entities.Employee;
 import com.deloitte.employee.domain.entities.ErrorDetail;
+import com.deloitte.employee.domain.enums.EmployeeSortField;
 import com.deloitte.employee.domain.failure.OperationFailure;
 import com.deloitte.employee.domain.failure.SystemFailure;
 import com.deloitte.employee.domain.mapper.ExceptionMapper;
 import com.deloitte.employee.domain.repository.IEmployeeManagementDao;
+import com.deloitte.employee.domain.valueobject.Query;
 import com.deloitte.employee.presentation.dto.request.EmployeeDetailInput;
+import com.deloitte.employee.presentation.dto.request.EmployeeQueryRequest;
 import com.deloitte.employee.presentation.dto.response.EmployeeDetail;
 import com.deloitte.employee.presentation.exception.AppException;
 import com.deloitte.employee.presentation.exception.ErrorCode;
 import com.deloitte.employee.presentation.exception.ErrorResponse;
 import com.deloitte.employee.presentation.mapper.EmployeeDataMapper;
+import com.deloitte.employee.presentation.mapper.QueryMapper;
 import io.vavr.control.Either;
 import io.vavr.control.Option;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,17 +34,20 @@ class EmployeeManagementServiceTest {
     private IEmployeeManagementDao employeeRepository;
     private EmployeeDataMapper employeeDataMapper;
     private ExceptionMapper<AppException> exceptionMapper;
+    private QueryMapper queryMapper;
     private EmployeeManagementService sut;
 
     @BeforeEach
     void setup() {
         employeeRepository = mock(IEmployeeManagementDao.class);
         employeeDataMapper = mock(EmployeeDataMapper.class);
+        queryMapper = mock(QueryMapper.class);
         exceptionMapper = mockExceptionMapper();
         sut = new EmployeeManagementService(
                 employeeRepository,
                 employeeDataMapper,
-                exceptionMapper
+                exceptionMapper,
+                queryMapper
         );
     }
 
@@ -133,6 +140,9 @@ class EmployeeManagementServiceTest {
     @Test
     void getAllEmployee_shouldReturnMappedList_whenEmployeesExist() {
 
+        // ---------- Arrange ----------
+        EmployeeQueryRequest request = new EmployeeQueryRequest(); // <-- real request
+
         List<Employee> employees = List.of(
                 Employee.builder().id("1").fullName("A").email("a@gmail.com").build(),
                 Employee.builder().id("2").fullName("B").email("b@gmail.com").build()
@@ -142,24 +152,42 @@ class EmployeeManagementServiceTest {
                 EmployeeDetail.builder().id("1").fullName("A").email("a@gmail.com").build(),
                 EmployeeDetail.builder().id("2").fullName("B").email("b@gmail.com").build()
         );
-        when(employeeRepository.getEmployees(any()))
+
+        Query<EmployeeSortField> defaultQuery = Query.<EmployeeSortField>defaultQuery()
+                .getOrElseThrow(() -> new RuntimeException("default query failed"));
+
+        // mock transformation from request -> domain Query
+        when(queryMapper.transform(eq(request), eq(exceptionMapper)))
+                .thenReturn(defaultQuery);
+
+        // mock repo getting employees for that query
+        when(employeeRepository.getEmployees(defaultQuery))
                 .thenReturn(Either.right(employees));
 
+        // Mock detail mapper
         when(employeeDataMapper.toDetail(employees.get(0))).thenReturn(mapped.get(0));
         when(employeeDataMapper.toDetail(employees.get(1))).thenReturn(mapped.get(1));
 
-        List<EmployeeDetail> result = sut.getAllEmployee();
+        // ---------- Act ----------
+        List<EmployeeDetail> result = sut.getAllEmployee(request);
 
-
+        // ---------- Assert ----------
         assertEquals(2, result.size());
         assertEquals("A", result.get(0).getFullName());
         assertEquals("B", result.get(1).getFullName());
 
-        verify(employeeDataMapper, times(2)).toDetail(any());
+        verify(queryMapper).transform(eq(request), eq(exceptionMapper));
+        verify(employeeRepository).getEmployees(defaultQuery);
+        verify(employeeDataMapper, times(2)).toDetail(any(Employee.class));
     }
+
+
 
     @Test
     void getAllEmployee_shouldThrowMappedException_whenRepositoryFails() {
+
+        // ---------- Arrange ----------
+        EmployeeQueryRequest request = new EmployeeQueryRequest(); // real request
 
         OperationFailure failure = new SystemFailure(
                 List.of(
@@ -180,34 +208,62 @@ class EmployeeManagementServiceTest {
                         .build()
         );
 
+        // Mock the query mapping
+        Query<EmployeeSortField> defaultQuery = Query.<EmployeeSortField>defaultQuery()
+                .getOrElseThrow(f -> new RuntimeException("default query failed"));
 
-        when(employeeRepository.getEmployees(any()))
+        when(queryMapper.transform(eq(request), eq(exceptionMapper)))
+                .thenReturn(defaultQuery);
+
+        // Mock repository failure
+        when(employeeRepository.getEmployees(defaultQuery))
                 .thenReturn(Either.left(failure));
 
+        // Mock exception mapping
         when(exceptionMapper.mapAndThrow(failure))
                 .thenThrow(mapped);
 
-        assertThatThrownBy(() -> sut.getAllEmployee())
+        // ---------- Act + Assert ----------
+        assertThatThrownBy(() -> sut.getAllEmployee(request))
                 .isInstanceOf(AppException.class)
                 .satisfies(ex -> {
                     AppException appEx = (AppException) ex;
                     assertEquals("DB failed", appEx.getErrorDetail().getMessage());
                 });
 
+        verify(queryMapper).transform(eq(request), eq(exceptionMapper));
+        verify(employeeRepository).getEmployees(defaultQuery);
         verify(exceptionMapper).mapAndThrow(failure);
     }
+
 
     @Test
     void getAllEmployee_shouldReturnEmptyList_whenNoEmployees() {
 
-        when(employeeRepository.getEmployees(any()))
+        // -------- Arrange --------
+        EmployeeQueryRequest request = new EmployeeQueryRequest();
+
+        // mock query returned by QueryMapper
+        Query<EmployeeSortField> defaultQuery = Query.<EmployeeSortField>defaultQuery()
+                .getOrElseThrow(f -> new RuntimeException("default query failed"));
+
+        when(queryMapper.transform(eq(request), eq(exceptionMapper)))
+                .thenReturn(defaultQuery);
+
+        when(employeeRepository.getEmployees(defaultQuery))
                 .thenReturn(Either.right(List.of()));
 
-        List<EmployeeDetail> result = sut.getAllEmployee();
+        // -------- Act --------
+        List<EmployeeDetail> result = sut.getAllEmployee(request);
 
+        // -------- Assert --------
         assertTrue(result.isEmpty());
+
         verify(employeeDataMapper, never()).toDetail(any());
+        verify(queryMapper).transform(eq(request), eq(exceptionMapper));
+        verify(employeeRepository).getEmployees(defaultQuery);
     }
+
 
 
     @Test

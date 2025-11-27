@@ -5,12 +5,14 @@ import com.deloitte.employee.domain.mapper.ExceptionMapper;
 import com.deloitte.employee.domain.repository.IEmployeeManagementDao;
 import com.deloitte.employee.domain.valueobject.Query;
 import com.deloitte.employee.presentation.dto.request.EmployeeDetailInput;
+import com.deloitte.employee.presentation.dto.request.EmployeeQueryRequest;
 import com.deloitte.employee.presentation.dto.response.EmployeeDetail;
 import com.deloitte.employee.presentation.exception.AppException;
 import com.deloitte.employee.presentation.exception.ErrorCode;
 import com.deloitte.employee.domain.entities.ErrorDetail;
 import com.deloitte.employee.presentation.exception.ErrorResponse;
 import com.deloitte.employee.presentation.mapper.EmployeeDataMapper;
+import com.deloitte.employee.presentation.mapper.QueryMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,7 @@ public class EmployeeManagementService {
     private final IEmployeeManagementDao employeeRepository;
     private final EmployeeDataMapper employeeDataMapper;
     private final ExceptionMapper<AppException> exceptionMapper;
+    private final QueryMapper queryMapper;
 
 
     public EmployeeDetail getEmployeeById(String id) {
@@ -50,11 +53,8 @@ public class EmployeeManagementService {
         );
     }
 
-    public List<EmployeeDetail> getAllEmployee() {
-        return employeeRepository.getEmployees(Query.<EmployeeSortField>defaultQuery().fold(
-                        exceptionMapper::mapAndThrow,
-                        q -> q
-                ))
+    public List<EmployeeDetail> getAllEmployee(EmployeeQueryRequest query) {
+        return employeeRepository.getEmployees(queryMapper.transform(query, exceptionMapper))
                 .fold(
                         exceptionMapper::mapAndThrow,
                         list -> list.stream()
