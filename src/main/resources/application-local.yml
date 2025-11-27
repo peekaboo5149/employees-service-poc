@@ -32,3 +32,38 @@ spring:
 server:
   servlet:
     context-path: /api/v1
+
+management:
+  prometheus:
+    metrics:
+      export:
+        properties:
+          io:
+            prometheus:
+              exporter:
+                exemplarsOnAllMetricTypes: false
+  tracing:
+    sampling:
+      probability: 1.0
+
+  server:
+    port: 10103
+  endpoints:
+    enabled-by-default: true
+    web:
+      exposure:
+        include: "health,prometheus,info,db,metrics"
+  endpoint:
+    health:
+      probes:
+        enabled: true
+    prometheus:
+      probes:
+        enabled: true
+
+mandatory:
+  headers:
+    routesToSkip:
+      - "/api/actuator"
+    startsWith:
+      - "/api/actuator/"

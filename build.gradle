@@ -25,8 +25,12 @@ repositories {
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+    implementation 'io.micrometer:micrometer-core'
+    implementation group: 'io.micrometer', name: 'micrometer-registry-prometheus', version: '1.13.1'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    runtimeOnly 'org.postgresql:postgresql'
     implementation 'io.vavr:vavr:0.10.7'
     implementation 'commons-io:commons-io:2.21.0'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'

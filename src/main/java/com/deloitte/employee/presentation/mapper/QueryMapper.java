@@ -10,7 +10,7 @@ import com.deloitte.employee.domain.valueobject.PageResult;
 import com.deloitte.employee.domain.valueobject.Query;
 import com.deloitte.employee.domain.valueobject.Search;
 import com.deloitte.employee.domain.valueobject.SortSpec;
-import com.deloitte.employee.presentation.dto.request.EmployeeQueryRequest;
+import com.deloitte.employee.presentation.dto.request.QueryRequest;
 import com.deloitte.employee.presentation.exception.AppException;
 import io.vavr.control.Either;
 import org.springframework.stereotype.Component;
@@ -21,7 +21,7 @@ import java.util.Map;
 
 @Component
 public class QueryMapper {
-    public Query<EmployeeSortField> transform(EmployeeQueryRequest req, ExceptionMapper<AppException> exceptionMapper) {
+    public Query<EmployeeSortField> transform(QueryRequest req, ExceptionMapper<AppException> exceptionMapper) {
         Query<EmployeeSortField> defaultQuery = Query.<EmployeeSortField>defaultQuery().fold(
                 exceptionMapper::mapAndThrow,
                 q -> q

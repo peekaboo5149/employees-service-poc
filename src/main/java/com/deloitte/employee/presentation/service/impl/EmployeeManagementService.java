@@ -1,11 +1,9 @@
-package com.deloitte.employee.presentation.service;
+package com.deloitte.employee.presentation.service.impl;
 
-import com.deloitte.employee.domain.enums.EmployeeSortField;
 import com.deloitte.employee.domain.mapper.ExceptionMapper;
 import com.deloitte.employee.domain.repository.IEmployeeManagementDao;
-import com.deloitte.employee.domain.valueobject.Query;
 import com.deloitte.employee.presentation.dto.request.EmployeeDetailInput;
-import com.deloitte.employee.presentation.dto.request.EmployeeQueryRequest;
+import com.deloitte.employee.presentation.dto.request.QueryRequest;
 import com.deloitte.employee.presentation.dto.response.EmployeeDetail;
 import com.deloitte.employee.presentation.exception.AppException;
 import com.deloitte.employee.presentation.exception.ErrorCode;
@@ -13,6 +11,7 @@ import com.deloitte.employee.domain.entities.ErrorDetail;
 import com.deloitte.employee.presentation.exception.ErrorResponse;
 import com.deloitte.employee.presentation.mapper.EmployeeDataMapper;
 import com.deloitte.employee.presentation.mapper.QueryMapper;
+import com.deloitte.employee.presentation.service.IEmployeeManagementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,7 +20,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class EmployeeManagementService {
+class EmployeeManagementService implements IEmployeeManagementService {
 
     private final IEmployeeManagementDao employeeRepository;
     private final EmployeeDataMapper employeeDataMapper;
@@ -29,6 +28,7 @@ public class EmployeeManagementService {
     private final QueryMapper queryMapper;
 
 
+    @Override
     public EmployeeDetail getEmployeeById(String id) {
         return employeeRepository.getEmployeeById(id).fold(
                 f -> {
@@ -53,7 +53,8 @@ public class EmployeeManagementService {
         );
     }
 
-    public List<EmployeeDetail> getAllEmployee(EmployeeQueryRequest query) {
+    @Override
+    public List<EmployeeDetail> getAllEmployee(QueryRequest query) {
         return employeeRepository.getEmployees(queryMapper.transform(query, exceptionMapper))
                 .fold(
                         exceptionMapper::mapAndThrow,
@@ -64,6 +65,7 @@ public class EmployeeManagementService {
     }
 
 
+    @Override
     public EmployeeDetail createEmployee(EmployeeDetailInput employee) {
         return employeeRepository.createEmployee(employeeDataMapper.toEntity(employee))
                 .fold(
@@ -72,6 +74,7 @@ public class EmployeeManagementService {
                 );
     }
 
+    @Override
     public EmployeeDetail updateEmployee(String id, EmployeeDetailInput employee) {
         return employeeRepository.updateEmployee(id, employeeDataMapper.toEntity(employee))
                 .fold(
@@ -81,6 +84,7 @@ public class EmployeeManagementService {
     }
 
 
+    @Override
     public void deleteEmployee(String id) {
         employeeRepository.deleteEmployee(id)
                 .peek(exceptionMapper::mapAndThrow);

@@ -1,8 +1,12 @@
 package com.deloitte.employee.presentation.dto.response;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@AllArgsConstructor
+@NoArgsConstructor
 @Builder
 @Data
 // This will also be the response for web api(s)

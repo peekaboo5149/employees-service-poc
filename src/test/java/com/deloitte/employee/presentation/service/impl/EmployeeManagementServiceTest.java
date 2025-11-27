@@ -1,4 +1,4 @@
-package com.deloitte.employee.presentation.service;
+package com.deloitte.employee.presentation.service.impl;
 
 import com.deloitte.employee.domain.entities.Employee;
 import com.deloitte.employee.domain.entities.ErrorDetail;
@@ -9,7 +9,7 @@ import com.deloitte.employee.domain.mapper.ExceptionMapper;
 import com.deloitte.employee.domain.repository.IEmployeeManagementDao;
 import com.deloitte.employee.domain.valueobject.Query;
 import com.deloitte.employee.presentation.dto.request.EmployeeDetailInput;
-import com.deloitte.employee.presentation.dto.request.EmployeeQueryRequest;
+import com.deloitte.employee.presentation.dto.request.QueryRequest;
 import com.deloitte.employee.presentation.dto.response.EmployeeDetail;
 import com.deloitte.employee.presentation.exception.AppException;
 import com.deloitte.employee.presentation.exception.ErrorCode;
@@ -141,7 +141,7 @@ class EmployeeManagementServiceTest {
     void getAllEmployee_shouldReturnMappedList_whenEmployeesExist() {
 
         // ---------- Arrange ----------
-        EmployeeQueryRequest request = new EmployeeQueryRequest(); // <-- real request
+        QueryRequest request = new QueryRequest(); // <-- real request
 
         List<Employee> employees = List.of(
                 Employee.builder().id("1").fullName("A").email("a@gmail.com").build(),
@@ -187,7 +187,7 @@ class EmployeeManagementServiceTest {
     void getAllEmployee_shouldThrowMappedException_whenRepositoryFails() {
 
         // ---------- Arrange ----------
-        EmployeeQueryRequest request = new EmployeeQueryRequest(); // real request
+        QueryRequest request = new QueryRequest(); // real request
 
         OperationFailure failure = new SystemFailure(
                 List.of(
@@ -241,7 +241,7 @@ class EmployeeManagementServiceTest {
     void getAllEmployee_shouldReturnEmptyList_whenNoEmployees() {
 
         // -------- Arrange --------
-        EmployeeQueryRequest request = new EmployeeQueryRequest();
+        QueryRequest request = new QueryRequest();
 
         // mock query returned by QueryMapper
         Query<EmployeeSortField> defaultQuery = Query.<EmployeeSortField>defaultQuery()

@@ -5,11 +5,13 @@ import com.zaxxer.hikari.HikariDataSource;
 import jakarta.persistence.EntityManagerFactory;
 
 import java.io.Serializable;
+import java.util.Properties;
 import javax.sql.DataSource;
 
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -54,6 +56,8 @@ public class DataSourceConfig implements Serializable {
     private int minimumIdle;
     private int leakDetectionThreshold;
     private String connectionTestQuery;
+    @Autowired
+    private JpaConfigProperties jpaConfigProperties;
 
     /**
      * Data source for Employee management db.
@@ -87,14 +91,35 @@ public class DataSourceConfig implements Serializable {
     @Bean(name = "employeeManagementEntityManagerFactoryBean")
     public LocalContainerEntityManagerFactoryBean getemployeeManagementEntityManagerFactory() {
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
-        vendorAdapter.setGenerateDdl(false);
+        vendorAdapter.setShowSql(jpaConfigProperties.isShowSql());
+        vendorAdapter.setGenerateDdl(false); // let Hibernate handle via ddl-auto
+
         LocalContainerEntityManagerFactoryBean factoryBean =
                 new LocalContainerEntityManagerFactoryBean();
+
         factoryBean.setDataSource(getemployeeManagementDataSource());
         factoryBean.setPackagesToScan("com.deloitte.employee.infra.entities");
         factoryBean.setJpaVendorAdapter(vendorAdapter);
+
+        Properties jpaProps = new Properties();
+
+        jpaProps.put("hibernate.hbm2ddl.auto",
+                jpaConfigProperties.getHibernate().getDdlAuto());
+
+        jpaProps.put("hibernate.dialect",
+                jpaConfigProperties.getDatabasePlatform());
+
+        // load additional custom properties under spring.jpa.properties
+        if (jpaConfigProperties.getProperties() != null) {
+            jpaProps.putAll(jpaConfigProperties.getProperties());
+        }
+
+        factoryBean.setJpaProperties(jpaProps);
+
         return factoryBean;
     }
+
+
 
     /**
      * Transaction Manager for Employee management db.
