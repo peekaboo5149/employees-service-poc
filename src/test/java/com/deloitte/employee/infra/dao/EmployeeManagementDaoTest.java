@@ -935,7 +935,7 @@ class EmployeeManagementDaoTest {
         String substring = employees.getFirst().getFullName().substring(0, 3).toLowerCase();
 
         // Build search
-        Search search = Search.NEW;
+        Search search = Search.empty();
         search.add("fullName", substring);
 
         PageResult pageRequest = PageResult.of(0, employees.size()).get();
@@ -987,7 +987,7 @@ class EmployeeManagementDaoTest {
         String substring2 = employees.get(1).getEmail().substring(0, 5).toLowerCase();
 
         // Build search
-        Search search = Search.NEW;
+        Search search = Search.empty();
         search.add("fullName", substring1);
         search.add("email", substring2);
 
@@ -1039,7 +1039,7 @@ class EmployeeManagementDaoTest {
         employees.forEach(this::saveEmployeeWithoutManager);
 
         // Build search with a string that doesn't exist
-        Search search = Search.NEW;
+        Search search = Search.empty();
         search.add("fullName", "nonexistentsubstring");
 
         PageResult pageRequest = PageResult.of(0, 20).get();
@@ -1084,10 +1084,10 @@ class EmployeeManagementDaoTest {
         employees.forEach(this::saveEmployeeWithoutManager);
 
         // Pick a substring and change case
-        String substring = employees.get(0).getFullName().substring(0, 3).toUpperCase();
+        String substring = employees.getFirst().getFullName().substring(0, 3).toUpperCase();
 
         // Build search
-        Search search = Search.NEW;
+        Search search = Search.empty();
         search.add("fullName", substring);
 
         PageResult pageRequest = PageResult.of(0, 20).get();
@@ -1156,30 +1156,37 @@ class EmployeeManagementDaoTest {
 
     @Test
     void getEmployees_shouldReturnValidationFailureForInvalidSearchField() {
-        // Save a few employees
+        // Arrange — insert some sample employees
         employees.forEach(this::saveEmployeeWithoutManager);
 
-        // Build a search with an invalid field
-        Search search = Search.NEW;
-        search.add("invalidField", "someValue");
+        // Build a search using a field NOT present on EmployeeJPAEntity
+        Search search = Search.empty();
+        search.add("doesNotExistField", "value");
 
         PageResult pageRequest = PageResult.of(0, 10).get();
 
-        Either<OperationFailure, Query<EmployeeSortField>> queryResult =
-                Query.of(pageRequest, List.of(), search);
+        Query<EmployeeSortField> query = Query.<EmployeeSortField>of(
+                pageRequest,
+                List.of(),
+                search
+        ).getOrElseThrow(f -> new RuntimeException("Query building should NOT fail here"));
 
-        // The query creation itself should fail with ValidationFailure
-        assertThat(queryResult.isLeft()).isTrue();
-        assertThat(queryResult.getLeft())
-                .isInstanceOf(ValidationFailure.class);
+        // ACT — DAO should validate search fields
+        Either<OperationFailure, List<Employee>> result =
+                employeeManagementDao.getEmployees(query);
 
-        ValidationFailure failure = (ValidationFailure) queryResult.getLeft();
+        // ASSERT
+        assertThat(result.isLeft()).isTrue();
+        assertThat(result.getLeft()).isInstanceOf(ValidationFailure.class);
+
+        ValidationFailure failure = (ValidationFailure) result.getLeft();
+
         assertThat(failure.getErrorDetail())
                 .extracting("field", "code")
-                .contains(tuple("invalidField", "ERR_INVALID_SEARCH_FIELD"));
+                .containsExactly(
+                        tuple("doesNotExistField", "ERR_INVALID_SEARCH_FIELD")
+                );
     }
-
-
 
     // ---------------- GET BY ID ----------------
 

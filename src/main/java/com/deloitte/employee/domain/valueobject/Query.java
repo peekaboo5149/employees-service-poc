@@ -39,7 +39,7 @@ public record Query<SORT_FIELD extends Enum<?>>(PageResult pageRequest,
             return Either.left(new ValidationFailure(errors));
         }
 
-        return Either.right(new Query<>(pageRequest, sorts, Search.NEW));
+        return Either.right(new Query<>(pageRequest, sorts, Search.empty()));
     }
 
     public static <SORT_FIELD extends Enum<?>> Either<OperationFailure, Query<SORT_FIELD>> of(
@@ -65,7 +65,7 @@ public record Query<SORT_FIELD extends Enum<?>>(PageResult pageRequest,
                     .build());
         }
 
-        if (search == null) search = Search.NEW;
+        if (search == null) search = Search.empty();
 
         if (!errors.isEmpty()) {
             return Either.left(new ValidationFailure(errors));
@@ -77,6 +77,6 @@ public record Query<SORT_FIELD extends Enum<?>>(PageResult pageRequest,
 
     public static <SORT_FIELD extends Enum<?>> Either<OperationFailure, Query<SORT_FIELD>> defaultQuery() {
         return PageResult.defaultPage()
-                .map(page -> new Query<>(page, List.of(), Search.NEW));
+                .map(page -> new Query<>(page, List.of(), Search.empty()));
     }
 }
