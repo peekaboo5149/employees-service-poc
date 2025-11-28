@@ -1,5 +1,6 @@
 package com.deloitte.employee.presentation.service.impl;
 
+import com.deloitte.employee.domain.failure.OperationFailure;
 import com.deloitte.employee.domain.mapper.ExceptionMapper;
 import com.deloitte.employee.domain.repository.IEmployeeManagementDao;
 import com.deloitte.employee.presentation.dto.request.EmployeeDetailInput;
@@ -12,6 +13,7 @@ import com.deloitte.employee.presentation.exception.ErrorResponse;
 import com.deloitte.employee.presentation.mapper.EmployeeDataMapper;
 import com.deloitte.employee.presentation.mapper.QueryMapper;
 import com.deloitte.employee.presentation.service.IEmployeeManagementService;
+import io.vavr.control.Option;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -86,7 +88,8 @@ class EmployeeManagementService implements IEmployeeManagementService {
 
     @Override
     public void deleteEmployee(String id) {
-        employeeRepository.deleteEmployee(id)
+        final Option<OperationFailure> operationFailures = employeeRepository.deleteEmployee(id);
+        operationFailures
                 .peek(exceptionMapper::mapAndThrow);
     }
 }

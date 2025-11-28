@@ -1248,11 +1248,12 @@ class EmployeeManagementDaoTest {
     }
 
     @Test
-    void deleteEmployee_shouldDoNothing_whenEmployeeDoesNotExist() {
+    void deleteEmployee_shouldThrowResourceNotFoundFailure_whenEmployeeDoesNotExist() {
         Option<OperationFailure> result =
                 employeeManagementDao.deleteEmployee("random-id");
 
-        assertThat(result.isEmpty()).isTrue();
+        assertThat(result.isDefined()).isTrue();  // Option has value
+        assertThat(result.get()).isInstanceOf(ResourceNotFoundFailure.class);
     }
 
     // ---------------- UPDATE ----------------

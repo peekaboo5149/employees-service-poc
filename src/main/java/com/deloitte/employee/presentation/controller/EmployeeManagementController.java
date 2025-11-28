@@ -25,7 +25,7 @@ class EmployeeManagementController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getEmployeeById(String id) {
+    public ResponseEntity<?> getEmployeeById(@PathVariable String id) {
         return ResponseEntity.ok(employeeManagementService.getEmployeeById(id));
     }
 
@@ -41,7 +41,7 @@ class EmployeeManagementController {
         return ResponseEntity.ok(employeeManagementService.createEmployee(requestBody));
     }
 
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable String id, @Valid @RequestBody EmployeeDetailInput requestBody) {
         return ResponseEntity.ok(employeeManagementService.updateEmployee(id, requestBody));
     }

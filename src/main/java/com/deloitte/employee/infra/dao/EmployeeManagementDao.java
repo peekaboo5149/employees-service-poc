@@ -174,8 +174,11 @@ class EmployeeManagementDao implements IEmployeeManagementDao,
         try {
             if (employeeJPARepository.existsById(id)) {
                 employeeJPARepository.deleteById(id);
+                return Option.none();
+            } else {
+                return Option.some(new ResourceNotFoundFailure(List.of(ErrorDetail.builder().field("id").code("ERR_EMPLOYEE_NOT_FOUND").message("Employee not found").build())));
             }
-            return Option.none();
+
         } catch (Throwable e) {
             return Option.some(new InfraStructureFailure(
                     List.of(
