@@ -160,7 +160,11 @@ class EmployeeManagementDao implements IEmployeeManagementDao,
                 return Either.left(new ResourceNotFoundFailure(List.of(ErrorDetail.builder().field("id").code("ERR_EMPLOYEE_NOT_FOUND").message("Employee not found").build())));
             }
 
-            EmployeeJPAEntity updatedEntity = employeeJPAMapper.merge(employeeEntity.get(), employee);
+            var merge = employeeJPAMapper.merge(employeeEntity.get(), employee);
+            if (merge.isLeft()) {
+                return Either.left(merge.getLeft());
+            }
+            EmployeeJPAEntity updatedEntity = merge.get();
             var result = employeeJPARepository.save(updatedEntity);
             return Either.right(employeeJPAMapper.toDomain(result));
         } catch (Throwable e) {

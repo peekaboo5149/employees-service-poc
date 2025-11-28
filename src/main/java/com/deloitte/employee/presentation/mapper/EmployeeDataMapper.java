@@ -18,7 +18,7 @@ public class EmployeeDataMapper {
                 .dob(employee.getDob().toString()) // TODO: Use some formatter
                 .address(employee.getAddress())
                 .designation(employee.getDesignation())
-                .isActive(employee.isActive())
+                .isActive(employee.getIsActive())
                 .startedAt(employee.getCreatedAt().toString()) // TODO: Use some formatter
                 .managerId(employee.getManagerId())
                 .build();
@@ -29,9 +29,9 @@ public class EmployeeDataMapper {
                 .id(UUID.randomUUID().toString())
                 .email(employee.getEmail())
                 .password(employee.getPassword())
-                .isActive(true)
+                .isActive(employee.getIsActive())
                 .address(employee.getAddress())
-                .managerId(null)
+                .managerId(employee.getManagerId())
                 .dob(employee.getDob())
                 .fullName(employee.getFullName())
                 .phoneNumber(employee.getPhoneNumber())

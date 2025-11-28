@@ -18,7 +18,7 @@ public class Employee {
     private String fullName;
     private String phoneNumber;
     private LocalDate dob;
-    private boolean isActive;
+    private Boolean isActive;
     private String designation;
     private String managerId;
     private String address;

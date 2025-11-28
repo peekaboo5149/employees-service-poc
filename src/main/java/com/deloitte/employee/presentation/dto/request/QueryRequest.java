@@ -8,22 +8,32 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 import java.util.Map;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
+
+@Builder(toBuilder = true)
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
-@Builder(toBuilder = true)
 public class QueryRequest {
 
-    private Integer page = 0;          // default page
-    private Integer size = 20;         // default size
+    @Min(value = 0, message = "Page number must be 0 or greater")
+    @Builder.Default
+    private Integer page = 0;
 
-    private List<SortRequest> sorts;   // optional sorting
-    private Map<String, String> search; // optional search fields
+    @Min(value = 1, message = "Page size must be at least 1")
+    @Builder.Default
+    private Integer size = 20;
+
+    private List<SortRequest> sorts;
+    private Map<String, String> search;
 
     @Builder(toBuilder = true)
     @Data
     public static class SortRequest {
-        private String field;      // FULL_NAME, EMAIL, etc
-        private String direction;  // ASC/DESC
+
+        private String field;
+        private String direction; // ASC/DESC
     }
 }

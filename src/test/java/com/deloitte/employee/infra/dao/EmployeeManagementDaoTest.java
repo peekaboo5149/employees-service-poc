@@ -238,7 +238,6 @@ class EmployeeManagementDaoTest {
             assertThat(current.compareTo(next)).isLessThanOrEqualTo(0);
         }
         employeeJPARepository.flush();
-        // Also lets do a real jdbc query and check if the above match
         List<String> dbSortedNames = jdbcTemplate.query(
                 """
                         SELECT full_name
@@ -646,7 +645,6 @@ class EmployeeManagementDaoTest {
         assertThat(result.isRight()).isTrue();
         List<Employee> page = result.get();
 
-        // expected remaining elements on last page
         int expectedRemaining = Math.max(0, total - pageRequest.offset());
         int expectedSize = Math.min(pageSize, expectedRemaining);
         assertThat(page).hasSize(expectedSize);
@@ -1296,7 +1294,7 @@ class EmployeeManagementDaoTest {
         assertThat(resultEmployee.getFullName()).isEqualTo("John Doe Updated");
         assertThat(resultEmployee.getPhoneNumber()).isEqualTo("9999999999");
         assertThat(resultEmployee.getDesignation()).isEqualTo("Senior Developer");
-        assertThat(resultEmployee.isActive()).isFalse();
+        assertThat(resultEmployee.getIsActive()).isFalse();
         assertThat(resultEmployee.getUpdatedBy()).isEqualTo("system-updater");
 
         // ---------- ASSERT (RAW DATABASE) ----------
@@ -1351,7 +1349,7 @@ class EmployeeManagementDaoTest {
                 .fullName(employee0.getFullName())
                 .phoneNumber(employee0.getPhoneNumber())
                 .dob(employee0.getDob())
-                .isActive(employee0.isActive())
+                .isActive(employee0.getIsActive())
                 .designation(employee0.getDesignation())
                 .managerId(employee0.getManagerId())
                 .address(employee0.getAddress())
@@ -1393,9 +1391,9 @@ class EmployeeManagementDaoTest {
                 .fullName(employee0.getFullName())
                 .phoneNumber(employee0.getPhoneNumber())
                 .dob(employee0.getDob())
-                .isActive(employee0.isActive())
+                .isActive(employee0.getIsActive())
                 .designation(employee0.getDesignation())
-                .managerId(null)
+                .managerId("NULL")
                 .address(employee0.getAddress())
                 .createdAt(employee0.getCreatedAt())
                 .updatedAt(LocalDateTime.now())
@@ -1438,7 +1436,7 @@ class EmployeeManagementDaoTest {
                 .fullName(employee0.getFullName())
                 .phoneNumber(employee0.getPhoneNumber())
                 .dob(employee0.getDob())
-                .isActive(employee0.isActive())
+                .isActive(employee0.getIsActive())
                 .designation(employee0.getDesignation())
                 .managerId(manager0.getId())
                 .address(employee0.getAddress())
@@ -1484,7 +1482,7 @@ class EmployeeManagementDaoTest {
                 .fullName(employee0.getFullName())
                 .phoneNumber(employee0.getPhoneNumber())
                 .dob(employee0.getDob())
-                .isActive(employee0.isActive())
+                .isActive(employee0.getIsActive())
                 .designation(employee0.getDesignation())
                 .managerId(manager1.getId())
                 .address(employee0.getAddress())
@@ -1512,6 +1510,56 @@ class EmployeeManagementDaoTest {
 
         assertThat(dbManagerId).isEqualTo(manager1.getId());
     }
+
+    @Test
+    void updateEmployee_shouldReturnError_whenEmployeeTriesToBeTheirOwnManager() {
+        // ---------- ARRANGE ----------
+        saveEmployeeWithoutManager(employee0);
+
+        // Employee tries to set himself as his own manager
+        Employee updatedEmployee = Employee.builder()
+                .id(employee0.getId())
+                .email(employee0.getEmail())
+                .password(employee0.getPassword())
+                .fullName(employee0.getFullName())
+                .phoneNumber(employee0.getPhoneNumber())
+                .dob(employee0.getDob())
+                .isActive(employee0.getIsActive())
+                .designation(employee0.getDesignation())
+                .managerId(employee0.getId()) // <-- Self manager
+                .address(employee0.getAddress())
+                .createdAt(employee0.getCreatedAt())
+                .updatedAt(LocalDateTime.now())
+                .createdBy(employee0.getCreatedBy())
+                .updatedBy("self-manager-attempt")
+                .build();
+
+        // ---------- ACT ----------
+        Either<OperationFailure, Employee> result =
+                employeeManagementDao.updateEmployee(employee0.getId(), updatedEmployee);
+
+        // ---------- ASSERT ----------
+        assertThat(result.isLeft()).isTrue();
+        assertThat(result.getLeft()).isInstanceOf(ValidationFailure.class);
+
+        ValidationFailure failure = (ValidationFailure) result.getLeft();
+
+        assertThat(failure.getErrorDetail().getFirst().getCode())
+                .isEqualTo("ERR_SELF_MANAGER");
+
+        assertThat(failure.getErrorDetail().getFirst().getField())
+                .isEqualTo("managerId");
+
+        // DB should NOT change manager
+        String dbManagerId = jdbcTemplate.queryForObject(
+                "SELECT manager_id FROM employees WHERE id = ?",
+                String.class,
+                employee0.getId()
+        );
+
+        assertThat(dbManagerId).isNull();
+    }
+
 
 
     // ---------------- HELPERS ----------------
@@ -1547,7 +1595,7 @@ class EmployeeManagementDaoTest {
                 employee.getFullName(),
                 employee.getPhoneNumber(),
                 employee.getDob(),
-                employee.isActive(),
+                employee.getIsActive(),
                 employee.getDesignation(),
                 null,
                 employee.getAddress(),
