@@ -71,3 +71,7 @@ mandatory:
 application:
   employee-management:
     seed: true
+
+springdoc:
+  swagger-ui:
+    path: '/swagger-ui.html'

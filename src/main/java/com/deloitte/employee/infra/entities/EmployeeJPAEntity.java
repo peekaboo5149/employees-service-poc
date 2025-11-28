@@ -50,6 +50,7 @@ public class EmployeeJPAEntity {
     private EmployeeJPAEntity manager;
 
     @OneToMany(mappedBy = "manager")
+    @Builder.Default
     private Set<EmployeeJPAEntity> subordinates = new HashSet<>();
 
     @Column(name = "address", length = 1024)
